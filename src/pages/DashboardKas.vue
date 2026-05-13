@@ -55,23 +55,10 @@ const toggleKas = async () => {
 const getLocalDateString = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
 const today = new Date()
 
+// Set default ke tanggal 1 bulan berjalan
 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
 const startDate = ref(getLocalDateString(firstDayOfMonth))
 const endDate = ref(getLocalDateString(today))
-const activeFilter = ref('Bulan Ini') // Untuk indikator visual UI
-
-const setFilter = (days, label) => {
-  activeFilter.value = label
-  endDate.value = getLocalDateString(today)
-  if (days === 'ALL') {
-    startDate.value = ''
-  } else {
-    const start = new Date()
-    start.setDate(today.getDate() - days)
-    startDate.value = getLocalDateString(start)
-  }
-}
 
 // --- STATE ---
 const totalKasFisik = ref(0) 
@@ -102,7 +89,6 @@ const filteredKas = computed(() => {
   })
 })
 
-// Palette warna disesuaikan untuk background putih (Enterprise look)
 const chartPemasukan = computed(() => {
   const data = filteredKas.value.filter(d => d.jenis === 'MASUK')
   const reguler = data.filter(d => d.kategori === 'REGULER').reduce((s, i) => s + i.nominal, 0)
@@ -112,7 +98,7 @@ const chartPemasukan = computed(() => {
     labels: ['Reguler', 'Pesanan', 'Lainnya'], 
     datasets: [{ 
       data: [reguler, pesanan, lainnya], 
-      backgroundColor: ['#2563eb', '#0ea5e9', '#10b981'], // Corporate blues & green
+      backgroundColor: ['#2563eb', '#0ea5e9', '#10b981'], 
       borderWidth: 0
     }] 
   }
@@ -130,7 +116,7 @@ const chartPengeluaran = computed(() => {
     labels: ['Bahan Baku', 'Rumah Tangga', 'Gaji', 'Kasbon', 'Lainnya'], 
     datasets: [{ 
       data: [bahan, rt, gaji, kasbon, lainnya], 
-      backgroundColor: ['#e11d48', '#f59e0b', '#8b5cf6', '#eab308', '#94a3b8'], // Refined alert colors
+      backgroundColor: ['#e11d48', '#f59e0b', '#8b5cf6', '#eab308', '#94a3b8'],
       borderWidth: 0
     }] 
   }
@@ -142,7 +128,7 @@ const chartOptions = {
   plugins: { 
     legend: { 
       position: 'bottom', 
-      labels: { color: '#475569', usePointStyle: true, boxWidth: 8 } // Teks legend disesuaikan untuk bg putih
+      labels: { color: '#475569', usePointStyle: true, boxWidth: 8 } 
     },
     tooltip: {
       backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -158,7 +144,7 @@ const chartOptions = {
       }
     }
   },
-  cutout: '70%' // Membuat doughnut lebih elegan (tipis)
+  cutout: '70%'
 }
 
 // --- ACTIONS ---
@@ -235,6 +221,10 @@ const openForm = (jenis) => {
   showForm.value = true 
 }
 
+const cetakRiwayat = () => {
+  window.print()
+}
+
 onMounted(() => {
   fetchKas()
   if (role.value === 'superadmin') {
@@ -246,7 +236,7 @@ onMounted(() => {
 <template>
   <div class="space-y-6">
     
-    <div v-if="role === 'superadmin'" class="flex justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
+    <div v-if="role === 'superadmin'" class="flex justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200 no-print">
       <div class="flex flex-col">
         <span class="text-sm font-semibold text-slate-800">Automasi Brankas</span>
         <span class="text-xs text-slate-500">Sinkronisasi mutasi kas otomatis dari nota/inventory</span>
@@ -264,8 +254,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
       <div class="lg:col-span-2 bg-white rounded-xl p-6 border border-slate-200 flex flex-col justify-center relative overflow-hidden">
         <div class="relative z-10">
           <p class="text-sm font-medium text-slate-500 uppercase tracking-wide">Saldo Kas Berjalan</p>
@@ -293,18 +282,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200">
+    <div class="bg-white rounded-xl border border-slate-200 no-print">
       <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 rounded-t-xl">
-        <div class="flex rounded-md shadow-sm" role="group">
-          <button @click="setFilter(7, '7 Hari')" type="button" class="px-4 py-2 text-sm font-medium border rounded-l-lg focus:z-10 focus:ring-2 focus:ring-blue-600 transition-colors" :class="activeFilter === '7 Hari' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'">7 Hari</button>
-          <button @click="setFilter(30, 'Bulan Ini')" type="button" class="px-4 py-2 text-sm font-medium border-t border-b focus:z-10 focus:ring-2 focus:ring-blue-600 transition-colors" :class="activeFilter === 'Bulan Ini' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'">30 Hari</button>
-          <button @click="setFilter('ALL', 'Semua Waktu')" type="button" class="px-4 py-2 text-sm font-medium border rounded-r-lg focus:z-10 focus:ring-2 focus:ring-blue-600 transition-colors" :class="activeFilter === 'Semua Waktu' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'">Semua</button>
+        <div class="flex flex-wrap items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analisis Dari:</span>
+            <input type="date" v-model="startDate" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sampai:</span>
+            <input type="date" v-model="endDate" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <input type="date" v-model="startDate" class="text-sm border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3">
-          <span class="text-slate-400 text-sm">s/d</span>
-          <input type="date" v-model="endDate" class="text-sm border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3">
-        </div>
+        <button @click="cetakRiwayat" class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
+          🖨️ Cetak Laporan
+        </button>
       </div>
       
       <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100">
@@ -323,11 +315,17 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
-        <h3 class="text-base font-semibold text-slate-800">Riwayat Mutasi</h3>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden print-area">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white no-print">
+        <h3 class="text-base font-semibold text-slate-800">Riwayat Mutasi Brankas</h3>
       </div>
-      <div class="overflow-x-auto">
+      
+      <div class="hidden print:block p-6 text-center border-b-2 border-slate-800 mb-4">
+        <h1 class="text-2xl font-black uppercase tracking-widest text-slate-900">Laporan Mutasi Brankas</h1>
+        <p class="font-bold text-slate-600 mt-1">Periode: {{ startDate }} s/d {{ endDate }}</p>
+      </div>
+
+      <div class="print:overflow-visible overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200 text-sm">
           <thead class="bg-slate-50">
             <tr>
@@ -335,7 +333,7 @@ onMounted(() => {
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Referensi</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Rincian</th>
               <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Nominal</th>
-              <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
+              <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider no-print">Aksi</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-200">
@@ -351,17 +349,17 @@ onMounted(() => {
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium mr-2 border" 
+                  <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium mr-2 border" 
                         :class="k.jenis === 'MASUK' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'">
                     {{ k.kategori.replace('_', ' ') }}
                   </span>
-                  <span class="text-slate-600 truncate max-w-xs">{{ k.keterangan }}</span>
+                  <span class="text-slate-600 truncate max-w-xs print:whitespace-normal print:max-w-none">{{ k.keterangan }}</span>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-semibold" :class="k.jenis === 'MASUK' ? 'text-emerald-600' : 'text-slate-900'">
                 {{ k.jenis === 'MASUK' ? '+' : '-' }} Rp {{ k.nominal.toLocaleString('id-ID') }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium no-print">
                 <button @click="hapusKas(k.id)" class="text-slate-400 hover:text-rose-600 transition-colors" title="Hapus Data">
                   <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -372,15 +370,11 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="showForm" class="fixed inset-0 z-100 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div v-if="showForm" class="fixed inset-0 z-100 overflow-y-auto no-print" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        
         <div class="fixed inset-0 bg-slate-900/60 transition-opacity backdrop-blur-sm" @click="showForm = false" aria-hidden="true"></div>
-
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
         <div class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-slate-200">
-          
           <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center" :class="form.jenis === 'MASUK' ? 'bg-emerald-50' : 'bg-rose-50'">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg" :class="form.jenis === 'MASUK' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'">
@@ -417,7 +411,7 @@ onMounted(() => {
                 <option value="REGULER">Kas Reguler</option>
                 <option value="PESANAN">Kas Pesanan</option>
                 <option value="BAHAN">Pengeluaran Bahan</option>
-                <option value="RUMAH_TANGGA">Rumah Tangga</option>
+                <option value="RUMAH_TANGGA">Rumah Tangga (Prive)</option>
                 <option value="GAJIAN">Gaji Karyawan</option>
                 <option value="KASBON">Kasbon / Pinjaman</option>
                 <option value="SALDO_AWAL">Saldo Awal / Opname</option>
@@ -467,3 +461,73 @@ onMounted(() => {
 
   </div>
 </template>
+
+<style>
+@media print {
+
+  /* 1. Basmi elemen header/navigasi yang bukan milik komponen ini */
+  header, nav, .flex.justify-between.items-center.border-b { 
+    display: none !important; 
+  }
+  
+  /* 2. Paksa tabel agar muat di mode Portrait */
+  .print-area table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .print-area th, .print-area td {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    font-size: 11px !important; /* Perkecil font sedikit agar lega */
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  /* Sembunyikan semua elemen yang memiliki class no-print */
+  .no-print, nav {
+    display: none !important;
+  }
+
+  /* Rapikan layout untuk kertas PDF */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important;
+  }
+
+  .min-h-screen {
+    background: white !important;
+  }
+
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0 !important;
+  }
+
+  /* Area tabel riwayat mengambil full width dan hapus border kotak luar */
+  .print-area {
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Pastikan warna teks tabel tetap jelas */
+  .bg-slate-50 { background-color: #f8fafc !important; }
+  .text-emerald-600 { color: #059669 !important; }
+  .text-rose-600 { color: #e11d48 !important; }
+
+  /* 3. Atur proporsi lebar kolom secara matematis untuk kertas A4 */
+  .print-area th:nth-child(1) { width: 15% !important; } /* Waktu */
+  .print-area th:nth-child(2) { width: 22% !important; } /* Referensi */
+  .print-area th:nth-child(3) { width: 45% !important; } /* Rincian (Paling Lebar) */
+  .print-area th:nth-child(4) { width: 18% !important; } /* Nominal */
+  
+  @page {
+    margin: 1cm;
+  }
+}
+</style>
