@@ -1,13 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const username = ref('')
 const password = ref('')
 const errorMsg = ref('')
+const isLoading = ref(false)
+
+onMounted(() => {
+  fetch(`${import.meta.env.VITE_API_URL}/`).catch(() => {})
+})
 
 const handleLogin = async () => {
+  isLoading.value = true // <--- Aktifkan animasi putar
+  errorMsg.value = ''
+  
   try {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
       method: 'POST',
@@ -26,6 +34,8 @@ const handleLogin = async () => {
     }
   } catch (err) {
     errorMsg.value = "Gagal terhubung ke server."
+  } finally {
+    isLoading.value = false // <--- Matikan animasi putar
   }
 }
 </script>
