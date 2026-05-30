@@ -114,16 +114,6 @@ onMounted(fetchAset)
             <p class="text-[10px] font-bold text-slate-400 uppercase">Piutang Dagang</p>
             <p class="text-lg font-bold text-slate-800 mt-1">Rp {{ formatRp(liveData.total_piutang) }}</p>
           </div>
-          <div class="mt-2 pt-2 border-t border-gray-100 text-[11px] font-medium text-gray-500 space-y-0.5 text-left">
-            <div class="flex justify-between">
-              <span>🚗 Piutang Reguler (Sales):</span>
-              <span class="font-mono font-bold text-gray-700">Rp {{ formatRp(liveData.piutang_reguler) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>🎂 Piutang Pesanan (PO):</span>
-              <span class="font-mono font-bold text-gray-700">Rp {{ formatRp(liveData.piutang_pesanan) }}</span>
-            </div>
-          </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <p class="text-[10px] font-bold text-slate-400 uppercase">Persediaan Barang</p>
             <p class="text-lg font-bold text-slate-800 mt-1">Rp {{ formatRp(liveData.total_persediaan) }}</p>
