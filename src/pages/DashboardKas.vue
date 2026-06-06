@@ -78,6 +78,14 @@ const form = ref({
 
 const getWIBTime = () => new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })
 
+const formatDateTime = (d) => {
+  if (!d) return '-'
+  const dateObj = new Date(d);
+  const date = dateObj.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric' })
+  const time = dateObj.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })
+  return `${date} ${time} WIB`
+}
+
 // --- LOGIKA DATA ---
 const filteredKas = computed(() => {
   return listKasAll.value.filter(k => {
@@ -341,8 +349,8 @@ onMounted(() => {
               <td colspan="5" class="px-6 py-10 text-center text-slate-500 text-sm italic">Tidak ada transaksi ditemukan pada periode ini.</td>
             </tr>
             <tr v-for="k in filteredKas" :key="k.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700 font-medium">
-                {{ k.tanggal ? k.tanggal.split('T')[0] : '-' }}
+              <td class="px-6 py-4 whitespace-nowrap text-slate-700 font-medium text-xs">
+                {{ k.tanggal ? formatDateTime(k.tanggal) : '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-slate-500 font-mono text-xs">
                 {{ k.no_nota_ref || '-' }}
