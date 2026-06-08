@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { PlusCircle, MinusCircle, Printer, Trash2, X, LayoutDashboard, Settings } from 'lucide-vue-next'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 
@@ -29,7 +30,7 @@ const fetchStatusKas = async () => {
 }
 
 const toggleKas = async () => {
-  if (!confirm(`Yakin ingin ${isKasActive.value ? 'MEMATIKAN' : 'MENYALAKAN'} sinkronisasi Kas Otomatis dari Nota/Inventory?`)) return
+  if (!(await window.$dialog.confirm(`Yakin ingin ${isKasActive.value ? 'MEMATIKAN' : 'MENYALAKAN'} sinkronisasi Kas Otomatis dari Nota/Inventory?`))) return
 
   const token = localStorage.getItem('admin_token')
   try {
@@ -213,7 +214,7 @@ const simpanTransaksi = async () => {
 }
 
 const hapusKas = async (id) => {
-  if(confirm("Apakah Anda yakin ingin menghapus catatan kas ini? Saldo akan disesuaikan secara otomatis.")) {
+  if(await window.$dialog.confirm("Apakah Anda yakin ingin menghapus catatan kas ini? Saldo akan disesuaikan secara otomatis.")) {
     const token = localStorage.getItem('admin_token')
     await fetch(`${import.meta.env.VITE_API_URL}/api/kas/${id}`, { 
       method: 'DELETE', 
@@ -244,54 +245,76 @@ onMounted(() => {
 <template>
   <div class="space-y-6">
     
-    <div v-if="role === 'superadmin'" class="flex justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200 no-print">
-      <div class="flex flex-col">
-        <span class="text-sm font-semibold text-slate-800">Automasi Brankas</span>
-        <span class="text-xs text-slate-500">Sinkronisasi mutasi kas otomatis dari nota/inventory</span>
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 gap-6 no-print">
+      <div class="flex items-center gap-5">
+        <div class="bg-linear-to-br from-sky-400 to-sky-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-200 shrink-0 text-white">
+          <LayoutDashboard :size="32" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-black text-slate-800 tracking-tight">Dashboard Kas</h1>
+          <p class="text-sm text-slate-500 font-medium mt-1.5 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+            Kelola penerimaan dan pengeluaran brankas
+          </p>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-medium" :class="isKasActive ? 'text-emerald-600' : 'text-slate-500'">
-          {{ isKasActive ? 'Aktif' : 'Nonaktif' }}
-        </span>
-        <button @click="toggleKas" 
-                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-                :class="isKasActive ? 'bg-emerald-500' : 'bg-slate-300'">
-          <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                :class="isKasActive ? 'translate-x-5' : 'translate-x-0'"></span>
-        </button>
+
+      <!-- Automasi Saklar dipindah ke dalam Header -->
+      <div v-if="role === 'superadmin'" class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-inner">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-xl shadow-sm text-slate-400"><Settings :size="20"/></div>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-black text-slate-700 uppercase tracking-wider">Automasi Brankas</span>
+            <span class="text-[9px] text-slate-500 font-bold mt-0.5 uppercase">Sinkronisasi Kas</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 ml-2 border-l border-slate-200 pl-4">
+          <button @click="toggleKas" 
+                  class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-sm"
+                  :class="isKasActive ? 'bg-sky-500' : 'bg-slate-300'">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="isKasActive ? 'translate-x-5' : 'translate-x-0'"></span>
+          </button>
+          <span class="text-[10px] font-black uppercase tracking-widest w-8" :class="isKasActive ? 'text-sky-600' : 'text-slate-400'">
+            {{ isKasActive ? 'ON' : 'OFF' }}
+          </span>
+        </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
-      <div class="lg:col-span-2 bg-white rounded-xl p-6 border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+      <div class="lg:col-span-2 bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-800 flex flex-col justify-center relative overflow-hidden shadow-xl">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"></div>
         <div class="relative z-10">
-          <p class="text-sm font-medium text-slate-500 uppercase tracking-wide">Saldo Kas Berjalan</p>
+          <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Kas Berjalan</p>
           <div class="mt-2 flex items-baseline gap-2">
-            <span class="text-2xl font-semibold text-slate-400">Rp</span>
-            <span class="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+            <span class="text-2xl font-black text-sky-400/80">Rp</span>
+            <span class="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md">
               {{ totalKasFisik.toLocaleString('id-ID') }}
             </span>
           </div>
         </div>
-        <svg class="absolute right-0 top-0 h-full w-48 text-slate-50 translate-x-10 transform" fill="currentColor" viewBox="0 0 24 24">
+        <svg class="absolute right-0 top-0 h-full w-48 text-white/5 translate-x-10 transform" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.64-2.25 1.64-1.74 0-2.26-.95-2.32-1.81H7.84c.04 1.52 1.05 2.81 2.7 3.11V19h2.36v-1.64c1.65-.37 2.86-1.38 2.86-2.98 0-2.16-1.78-2.74-3.45-3.24z"/>
         </svg>
       </div>
 
       <div class="flex flex-col gap-3">
         <button @click="openForm('MASUK')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          <PlusCircle class="w-5 h-5" />
           Catat Penerimaan
         </button>
         <button @click="openForm('KELUAR')" class="flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors">
-          <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+          <MinusCircle class="w-5 h-5 text-rose-500" />
           Catat Pengeluaran
         </button>
       </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 no-print">
-      <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 rounded-t-xl">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm no-print overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 rounded-t-3xl">
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analisis Dari:</span>
@@ -303,7 +326,7 @@ onMounted(() => {
           </div>
         </div>
         <button @click="cetakRiwayat" class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
-          🖨️ Cetak Laporan
+          <Printer class="w-4 h-4" /> Cetak Laporan
         </button>
       </div>
       
@@ -323,9 +346,9 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden print-area">
-      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white no-print">
-        <h3 class="text-base font-semibold text-slate-800">Riwayat Mutasi Brankas</h3>
+    <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm print-area">
+      <div class="px-6 py-5 border-b border-slate-100 bg-white no-print">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">Riwayat Mutasi Brankas</h3>
       </div>
       
       <div class="hidden print:block p-6 text-center border-b-2 border-slate-800 mb-4">
@@ -369,7 +392,7 @@ onMounted(() => {
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium no-print">
                 <button @click="hapusKas(k.id)" class="text-slate-400 hover:text-rose-600 transition-colors" title="Hapus Data">
-                  <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <Trash2 class="w-5 h-5 mx-auto" />
                 </button>
               </td>
             </tr>
@@ -386,8 +409,8 @@ onMounted(() => {
           <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center" :class="form.jenis === 'MASUK' ? 'bg-emerald-50' : 'bg-rose-50'">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg" :class="form.jenis === 'MASUK' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'">
-                <svg v-if="form.jenis === 'MASUK'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                <PlusCircle v-if="form.jenis === 'MASUK'" class="w-5 h-5" />
+                <MinusCircle v-else class="w-5 h-5" />
               </div>
               <div>
                 <h3 class="text-lg font-bold text-slate-900 leading-none" id="modal-title">
@@ -397,7 +420,7 @@ onMounted(() => {
               </div>
             </div>
             <button @click="showForm = false" class="text-slate-400 hover:text-slate-600 transition-colors">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <X class="h-6 w-6" />
             </button>
           </div>
 

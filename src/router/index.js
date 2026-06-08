@@ -1,12 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardKas from '../pages/DashboardKas.vue'
-import LoginKas from '../pages/LoginKas.vue' // <--- Tambah ini
+import LoginKas from '../pages/LoginKas.vue'
 import AsetPertumbuhan from '../pages/AsetPertumbuhan.vue'
+import BelanjaKas from '../pages/BelanjaKas.vue'
 
 const routes = [
   { path: '/login', component: LoginKas },
   { path: '/', component: DashboardKas, meta: { requiresAuth: true } },
-  { path: '/aset', component: AsetPertumbuhan },
+  { path: '/aset', component: AsetPertumbuhan, meta: { requiresAuth: true } },
+  { path: '/belanja', component: BelanjaKas, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

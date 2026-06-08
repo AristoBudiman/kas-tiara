@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import '@fontsource/inter'
 import './style.css' // Pastikan ini file tempat import Tailwind kamu
 import App from './App.vue'
 import router from './router' // <-- Panggil router
