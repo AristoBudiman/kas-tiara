@@ -13,8 +13,10 @@ const isMenuOpen = ref(false)
 const isSidebarMinimized = ref(false)
 
 const isLoginPage = computed(() => route.path === '/login')
+const role = ref(localStorage.getItem('admin_role') || 'superadmin')
 
 watch(() => route.path, () => {
+  role.value = localStorage.getItem('admin_role') || 'superadmin'
   isMenuOpen.value = false
 })
 
@@ -83,7 +85,16 @@ const logout = async () => {
             </div>
         </div>
 
-        <div class="p-4 border-t border-slate-800 shrink-0 transition-all duration-300" :class="isSidebarMinimized ? 'p-2' : 'p-4'">
+        <div class="p-4 border-t border-slate-800 shrink-0 transition-all duration-300 flex flex-col gap-3" :class="isSidebarMinimized ? 'p-2' : 'p-4'">
+            <div v-if="!isSidebarMinimized" class="px-2 flex items-center gap-3">
+               <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sky-500 font-bold shadow-inner shrink-0">
+                 {{ role ? role.charAt(0).toUpperCase() : '?' }}
+               </div>
+               <div class="overflow-hidden">
+                 <p class="text-xs font-bold text-slate-200 capitalize truncate">{{ role }}</p>
+                 <p class="text-[10px] text-slate-500 font-medium">Logged In</p>
+               </div>
+            </div>
             <button @click="logout" title="Keluar Sistem" class="w-full flex items-center justify-center bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl text-sm font-bold transition-all shadow-sm group" :class="isSidebarMinimized ? 'py-3 px-0' : 'py-3 px-4 gap-2'">
                 <LogOut :size="20" class="group-hover:-translate-x-1 transition-transform shrink-0" />
                 <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Keluar Sistem</span>
@@ -102,9 +113,10 @@ const logout = async () => {
                 <button @click="isMenuOpen = true" class="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
                     <Menu :size="24" />
                 </button>
-                <h1 class="font-black text-lg tracking-widest text-slate-800 leading-none">
-                  TIARA <span class="text-transparent bg-clip-text bg-linear-to-r from-sky-500 to-sky-600">FINANCIAL</span>
-                </h1>
+                <div class="flex items-center gap-2">
+                    <Crown :size="20" class="text-sky-500" />
+                    <span class="font-black text-lg tracking-tight text-slate-800">TIARA <span class="text-xs text-sky-600 bg-sky-100 px-2 py-0.5 rounded uppercase font-bold ml-1">{{ role }}</span></span>
+                </div>
             </div>
         </header>
 
