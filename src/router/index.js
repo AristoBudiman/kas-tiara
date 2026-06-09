@@ -3,12 +3,14 @@ import DashboardKas from '../pages/DashboardKas.vue'
 import LoginKas from '../pages/LoginKas.vue'
 import AsetPertumbuhan from '../pages/AsetPertumbuhan.vue'
 import BelanjaKas from '../pages/BelanjaKas.vue'
+import ManajemenPengguna from '../pages/ManajemenPengguna.vue'
 
 const routes = [
   { path: '/login', component: LoginKas },
   { path: '/', component: DashboardKas, meta: { requiresAuth: true } },
   { path: '/aset', component: AsetPertumbuhan, meta: { requiresAuth: true } },
   { path: '/belanja', component: BelanjaKas, meta: { requiresAuth: true } },
+  { path: '/pengguna', component: ManajemenPengguna, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
