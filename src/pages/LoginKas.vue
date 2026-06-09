@@ -26,12 +26,21 @@ const handleLogin = async () => {
     
     const data = await res.json()
     
-    if (res.ok && data.role === 'superadmin') {
-      localStorage.setItem('admin_token', data.token)
-      localStorage.setItem('admin_role', data.role)
-      router.push('/')
+    if (res.ok) {
+      // Izinkan login jika Superadmin ATAU memiliki izin app_kas
+      const isSuperadmin = data.role === 'Superadmin' || data.role === 'superadmin'
+      const hasAppKas = data.permissions && data.permissions.includes('app_kas')
+
+      if (isSuperadmin || hasAppKas) {
+        localStorage.setItem('admin_token', data.token)
+        localStorage.setItem('admin_role', data.role)
+        localStorage.setItem('admin_permissions', JSON.stringify(data.permissions || []))
+        router.push('/')
+      } else {
+        errorMsg.value = "Akses Ditolak! Anda tidak memiliki izin ke Sistem Kas."
+      }
     } else {
-      errorMsg.value = "Login gagal atau Anda bukan Super Admin!"
+      errorMsg.value = data.error || "Login gagal!"
     }
   } catch (err) {
     errorMsg.value = "Gagal terhubung ke server."

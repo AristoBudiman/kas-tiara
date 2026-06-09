@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  Menu, X, Crown, LayoutDashboard, PieChart, LogOut, ShoppingCart, Users, UserCog
+  Menu, X, Crown, LayoutDashboard, PieChart, LogOut, ShoppingCart, Users, UserCog, Key
 } from 'lucide-vue-next'
+import { hasPermission } from './utils/permission'
 import GlobalDialog from './components/GlobalDialog.vue'
 
 const route = useRoute()
@@ -106,26 +107,35 @@ const saveProfile = async () => {
         <div class="flex-1 overflow-y-auto overflow-x-hidden py-5 space-y-8 custom-scrollbar transition-all duration-300" :class="isSidebarMinimized ? 'px-2' : 'px-3'">
             
             <div class="space-y-1.5">
-                <span v-if="!isSidebarMinimized" class="text-[10px] font-black text-slate-500 uppercase tracking-wider px-3 mb-2 block whitespace-nowrap overflow-hidden">Menu Utama</span>
+                <span v-if="!isSidebarMinimized" class="text-[10px] font-black text-slate-500 uppercase tracking-wider px-3 mb-2 block whitespace-nowrap overflow-hidden">Menu Finansial</span>
                 
-                <router-link to="/" title="Kas Harian" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
+                <router-link v-if="hasPermission('app_kas')" to="/" title="Kas Harian" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
                     <LayoutDashboard :size="20" class="shrink-0" />
                     <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Kas Harian</span>
                 </router-link>
                 
-                <router-link to="/aset" title="Kinerja & Aset" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
+                <router-link v-if="hasPermission('manage_kas')" to="/aset" title="Kinerja & Aset" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
                     <PieChart :size="20" class="shrink-0" />
                     <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Kinerja & Aset</span>
                 </router-link>
 
-                <router-link to="/belanja" title="Belanja Bahan" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
+                <router-link v-if="hasPermission('manage_kas')" to="/belanja" title="Belanja Bahan" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
                     <ShoppingCart :size="20" class="shrink-0" />
                     <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Belanja Bahan</span>
                 </router-link>
+            </div>
 
-                <router-link v-if="role === 'superadmin'" to="/pengguna" title="Manajemen Pengguna" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
+            <div v-if="hasPermission('manage_admin')" class="space-y-1.5 pt-4">
+                <span v-if="!isSidebarMinimized" class="text-[10px] font-black text-slate-500 uppercase tracking-wider px-3 mb-2 block whitespace-nowrap overflow-hidden">Menu User</span>
+
+                <router-link to="/pengguna" title="Manajemen Pengguna" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
                     <Users :size="20" class="shrink-0" />
                     <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Pengguna</span>
+                </router-link>
+
+                <router-link to="/roles" title="Hak Akses (Role)" class="py-2.5 rounded-xl text-sm font-bold flex items-center text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" :class="isSidebarMinimized ? 'justify-center px-0' : 'px-3 gap-3'" exact-active-class="!bg-sky-600 !text-white shadow-md">
+                    <Key :size="20" class="shrink-0" />
+                    <span v-if="!isSidebarMinimized" class="whitespace-nowrap">Hak Akses</span>
                 </router-link>
             </div>
         </div>

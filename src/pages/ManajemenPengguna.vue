@@ -5,11 +5,12 @@ import { Users, Plus, Pencil, Trash2, Shield, X, User } from 'lucide-vue-next'
 const listUsers = ref([])
 const showModal = ref(false)
 const isEdit = ref(false)
+const listRoles = ref([])
 const formUser = ref({
   id: '',
   username: '',
   password: '',
-  role: 'sales'
+  role_id: ''
 })
 
 const fetchUsers = async () => {
@@ -22,20 +23,30 @@ const fetchUsers = async () => {
   }
 }
 
+const fetchRoles = async () => {
+  const token = localStorage.getItem('admin_token')
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/roles`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if (res.ok) {
+    listRoles.value = await res.json()
+  }
+}
+
 const openAddModal = () => {
   isEdit.value = false
-  formUser.value = { id: '', username: '', password: '', role: 'sales' }
+  formUser.value = { id: '', username: '', password: '', role_id: '' }
   showModal.value = true
 }
 
 const openEditModal = (u) => {
   isEdit.value = true
-  formUser.value = { id: u.ID, username: u.Username, password: '', role: u.Role }
+  formUser.value = { id: u.id, username: u.username, password: '', role_id: u.role_id || (u.role && u.role.id) }
   showModal.value = true
 }
 
 const saveUser = async () => {
-  if (!formUser.value.username || !formUser.value.role) {
+  if (!formUser.value.username || !formUser.value.role_id) {
     return window.$dialog.alert('Username dan Role wajib diisi!')
   }
   if (!isEdit.value && !formUser.value.password) {
@@ -51,7 +62,7 @@ const saveUser = async () => {
   
   const payload = {
     username: formUser.value.username,
-    role: formUser.value.role,
+    role_id: Number(formUser.value.role_id),
   }
   if (formUser.value.password) {
     payload.password = formUser.value.password
@@ -91,8 +102,9 @@ const deleteUser = async (id) => {
   }
 }
 
-onMounted(() => {
-  fetchUsers()
+onMounted(async () => {
+  await fetchRoles()
+  await fetchUsers()
 })
 </script>
 
@@ -131,22 +143,22 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="u in listUsers" :key="u.ID" class="hover:bg-slate-50/50 transition-colors border-b border-slate-100/50">
-              <td class="py-4 px-6 text-sm font-bold text-slate-500">#{{ u.ID }}</td>
+            <tr v-for="u in listUsers" :key="u.id" class="hover:bg-slate-50/50 transition-colors border-b border-slate-100/50">
+              <td class="py-4 px-6 text-sm font-bold text-slate-500">#{{ u.id }}</td>
               <td class="py-4 px-6">
                 <div class="flex items-center gap-3">
                   <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg">
                     <User :size="16" />
                   </div>
-                  <span class="font-bold text-slate-700">{{ u.Username }}</span>
+                  <span class="font-bold text-slate-700">{{ u.username }}</span>
                 </div>
               </td>
               <td class="py-4 px-6">
-                <span v-if="u.Role === 'superadmin'" class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border border-rose-200">
+                <span v-if="(u.role && u.role.nama_role === 'Superadmin') || u.legacy_role === 'superadmin'" class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border border-rose-200">
                   <Shield :size="14" /> Superadmin
                 </span>
                 <span v-else class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border border-sky-200">
-                  <User :size="14" /> {{ u.Role }}
+                  <User :size="14" /> {{ u.role ? u.role.nama_role : (u.legacy_role || 'Unknown') }}
                 </span>
               </td>
               <td class="py-4 px-6 text-center">
@@ -154,7 +166,7 @@ onMounted(() => {
                   <button @click="openEditModal(u)" class="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-colors" title="Edit">
                     <Pencil :size="18" />
                   </button>
-                  <button v-if="u.Role !== 'superadmin'" @click="deleteUser(u.ID)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="Hapus">
+                  <button v-if="!((u.role && u.role.nama_role === 'Superadmin') || u.legacy_role === 'superadmin')" @click="deleteUser(u.id)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="Hapus">
                     <Trash2 :size="18" />
                   </button>
                 </div>
@@ -186,10 +198,9 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Role</label>
-          <select v-model="formUser.role" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700">
-            <option value="superadmin">Superadmin</option>
-            <option value="sales">Sales</option>
-            <!-- Nanti kalau ada dapur admin bisa tambah disini -->
+          <select v-model="formUser.role_id" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700">
+            <option value="" disabled>Pilih Role</option>
+            <option v-for="r in listRoles" :key="r.id" :value="r.id">{{ r.nama_role }}</option>
           </select>
         </div>
         <div>
