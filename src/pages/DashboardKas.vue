@@ -175,11 +175,9 @@ const fetchKas = async () => {
     }
     
     const data = await res.json()
-    listKasAll.value = Array.isArray(data) ? data : []
+    listKasAll.value = Array.isArray(data.riwayat) ? data.riwayat : []
     
-    const masuk = listKasAll.value.filter(d => d.jenis === 'MASUK').reduce((s, i) => s + i.nominal, 0)
-    const keluar = listKasAll.value.filter(d => d.jenis === 'KELUAR').reduce((s, i) => s + i.nominal, 0)
-    totalKasFisik.value = masuk - keluar
+    totalKasFisik.value = data.saldo_saat_ini || 0
   } catch (err) { 
     console.error(err) 
   }
