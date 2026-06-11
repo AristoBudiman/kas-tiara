@@ -197,8 +197,9 @@ const simpanTransaksi = async () => {
     if (res.ok) {
       showForm.value = false
       fetchKas()
+      const savedDate = form.value.tanggal
       form.value = { 
-        tanggal: getLocalDateString(new Date()), 
+        tanggal: savedDate, 
         jam: '', 
         kategori: 'RUMAH_TANGGA', 
         jenis: 'MASUK', 
@@ -302,11 +303,15 @@ onMounted(() => {
       </div>
 
       <div class="flex flex-col gap-3">
-        <button @click="openForm('MASUK')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors">
+        <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tgl Input:</span>
+          <input type="date" v-model="form.tanggal" class="text-xs font-bold text-blue-600 outline-none bg-transparent cursor-pointer">
+        </div>
+        <button @click="openForm('MASUK')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors min-h-12">
           <PlusCircle class="w-5 h-5" />
           Catat Penerimaan
         </button>
-        <button @click="openForm('KELUAR')" class="flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors">
+        <button @click="openForm('KELUAR')" class="flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-medium text-sm shadow-sm flex items-center justify-center gap-2 transition-colors min-h-12">
           <MinusCircle class="w-5 h-5 text-rose-500" />
           Catat Pengeluaran
         </button>
@@ -428,7 +433,7 @@ onMounted(() => {
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Tanggal Transaksi</label>
-                <input type="date" v-model="form.tanggal" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium text-slate-900">
+                <input type="date" v-model="form.tanggal" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg py-2 px-3 text-slate-500 text-sm cursor-not-allowed">
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Jam (Sesuai WIB)</label>
