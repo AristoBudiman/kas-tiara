@@ -160,7 +160,11 @@ const chartOptions = {
 const fetchKas = async () => {
   const token = localStorage.getItem('admin_token')
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/kas`, { 
+    let url = `${import.meta.env.VITE_API_URL}/api/kas`
+    if (startDate.value && endDate.value) {
+      url += `?start_date=${startDate.value}&end_date=${endDate.value}`
+    }
+    const res = await fetch(url, { 
       headers: { 'Authorization': `Bearer ${token}` } 
     })
     
@@ -323,11 +327,11 @@ onMounted(() => {
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analisis Dari:</span>
-            <input type="date" v-model="startDate" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
+            <input type="date" v-model="startDate" @change="fetchKas" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
           </div>
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sampai:</span>
-            <input type="date" v-model="endDate" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
+            <input type="date" v-model="endDate" @change="fetchKas" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-3 font-bold text-slate-700 outline-none">
           </div>
         </div>
         <button @click="cetakRiwayat" class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
