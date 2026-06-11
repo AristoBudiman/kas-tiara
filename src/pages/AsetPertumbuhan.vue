@@ -14,8 +14,14 @@ const localTodayStr = new Date(today - offset).toISOString().split('T')[0];
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 const localFirstDayStr = new Date(firstDay - offset).toISOString().split('T')[0];
 
+const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+const localLastYearStr = new Date(lastYear - offset).toISOString().split('T')[0];
+
 const selectedDate = ref(localTodayStr)
 const startPriveDate = ref(localFirstDayStr)
+
+const startHistoryDate = ref(localLastYearStr)
+const endHistoryDate = ref(localTodayStr)
 
 const fetchAset = async () => {
   isLoading.value = true
@@ -31,7 +37,11 @@ const fetchAset = async () => {
       bulanLalu.value = data.bulan_lalu && data.bulan_lalu.id ? data.bulan_lalu : null
     }
 
-    const resRiwayat = await fetch(`${import.meta.env.VITE_API_URL}/api/aset/riwayat`, {
+    let historyUrl = `${import.meta.env.VITE_API_URL}/api/aset/riwayat`
+    if (startHistoryDate.value && endHistoryDate.value) {
+      historyUrl += `?start_date=${startHistoryDate.value}&end_date=${endHistoryDate.value}`
+    }
+    const resRiwayat = await fetch(historyUrl, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (resRiwayat.ok) {
@@ -200,8 +210,13 @@ onMounted(fetchAset)
 
       <section>
         <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-          <div class="px-6 py-5 border-b border-slate-100 bg-white">
+          <div class="px-6 py-5 border-b border-slate-100 bg-white flex flex-col sm:flex-row justify-between items-center gap-4">
             <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">Riwayat Tutup Buku</h3>
+            <div class="flex flex-wrap gap-2">
+              <input type="date" v-model="startHistoryDate" @change="fetchAset" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+              <span class="text-slate-400 font-bold self-center">-</span>
+              <input type="date" v-model="endHistoryDate" @change="fetchAset" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
