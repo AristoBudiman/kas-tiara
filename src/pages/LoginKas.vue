@@ -1,17 +1,55 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Hourglass } from 'lucide-vue-next'
+import { Hourglass, Eye, EyeOff } from 'lucide-vue-next'
+import { GoogleLogin } from 'vue3-google-login'
 
 const router = useRouter()
 const username = ref('')
 const password = ref('')
 const errorMsg = ref('')
 const isLoading = ref(false)
+const showPassword = ref(false)
 
 onMounted(() => {
   fetch(`${import.meta.env.VITE_API_URL}/`).catch(() => {})
 })
+
+const handleGoogleLogin = async (response) => {
+  isLoading.value = true
+  errorMsg.value = ''
+  
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/login/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    })
+    
+    const data = await res.json()
+    
+    if (res.ok) {
+      // Izinkan login jika Superadmin ATAU memiliki izin app_kas
+      const isSuperadmin = data.role === 'Superadmin' || data.role === 'superadmin'
+      const hasAppKas = data.permissions && data.permissions.includes('app_kas')
+
+      if (isSuperadmin || hasAppKas) {
+        localStorage.setItem('admin_token', data.token)
+        localStorage.setItem('admin_role', data.role)
+        localStorage.setItem('admin_permissions', JSON.stringify(data.permissions || []))
+        router.push('/')
+      } else {
+        errorMsg.value = "Akses Ditolak! Anda tidak memiliki izin ke Sistem Kas."
+      }
+    } else {
+      errorMsg.value = data.error || "Login gagal!"
+    }
+  } catch (err) {
+    errorMsg.value = "Gagal terhubung ke server."
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const handleLogin = async () => {
   isLoading.value = true // <--- Aktifkan animasi putar
@@ -51,11 +89,8 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-4 pb-4">
-    
-    <div class="bg-white min-h-[85vh] w-full rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center font-sans text-slate-900">
-      
-      <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+  <div class="min-h-[80vh] flex items-center justify-center font-sans text-slate-900 w-full">
+    <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100 relative z-10">
         
         <div class="text-center mb-8">
           <div class="mx-auto bg-sky-50 w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-sky-100 shadow-sm">
@@ -79,23 +114,34 @@ const handleLogin = async () => {
             <input 
               v-model="username" 
               type="text" 
-              class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-shadow font-medium" 
+              class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-shadow font-medium" 
               placeholder="Masukkan username"
               required
+              autofocus
               :disabled="isLoading"
             >
           </div>
           
           <div>
             <label class="block text-slate-700 text-sm font-bold mb-1.5">Password</label>
-            <input 
-              v-model="password" 
-              type="password" 
-              class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-shadow font-medium" 
-              placeholder="••••••••"
-              required
-              :disabled="isLoading"
-            >
+            <div class="relative">
+              <input 
+                v-model="password" 
+                :type="showPassword ? 'text' : 'password'" 
+                class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg py-2.5 px-3 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-shadow font-medium" 
+                placeholder="••••••••"
+                required
+                :disabled="isLoading"
+              >
+              <button 
+                type="button" 
+                @click="showPassword = !showPassword" 
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                <Eye v-if="!showPassword" :size="20" />
+                <EyeOff v-else :size="20" />
+              </button>
+            </div>
           </div>
 
           <div v-if="isLoading" class="bg-sky-50 border border-sky-200 p-3 rounded-lg flex items-start gap-3 mt-2">
@@ -118,11 +164,23 @@ const handleLogin = async () => {
               </svg>
               Memverifikasi...
             </span>
-            <span v-else>Masuk Sistem Kas</span>
+            <span v-else>Masuk Kas</span>
           </button>
         </form>
         
+        <div class="relative mt-8 mb-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-slate-400 font-bold text-[10px] tracking-wider uppercase">Atau gunakan</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center">
+          <GoogleLogin :callback="handleGoogleLogin" :buttonConfig="{ width: 368, shape: 'rectangular' }" />
+        </div>
+        
       </div>
-    </div>
   </div>
 </template>

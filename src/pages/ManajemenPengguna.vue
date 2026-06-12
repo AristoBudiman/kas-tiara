@@ -9,6 +9,7 @@ const listRoles = ref([])
 const formUser = ref({
   id: '',
   username: '',
+  email: '',
   password: '',
   role_id: ''
 })
@@ -35,22 +36,22 @@ const fetchRoles = async () => {
 
 const openAddModal = () => {
   isEdit.value = false
-  formUser.value = { id: '', username: '', password: '', role_id: '' }
+  formUser.value = { id: '', username: '', email: '', password: '', role_id: '' }
   showModal.value = true
 }
 
 const openEditModal = (u) => {
   isEdit.value = true
-  formUser.value = { id: u.id, username: u.username, password: '', role_id: u.role_id || (u.role && u.role.id) }
+  formUser.value = { id: u.id, username: u.username, email: u.email || '', password: '', role_id: u.role_id || (u.role && u.role.id) }
   showModal.value = true
 }
 
 const saveUser = async () => {
-  if (!formUser.value.username || !formUser.value.role_id) {
-    return window.$dialog.alert('Username dan Role wajib diisi!')
+  if (!formUser.value.email && !formUser.value.username) {
+    return window.$dialog.alert('Minimal Email ATAU Username wajib diisi!')
   }
-  if (!isEdit.value && !formUser.value.password) {
-    return window.$dialog.alert('Password wajib diisi untuk user baru!')
+  if (!formUser.value.role_id) {
+    return window.$dialog.alert('Role wajib dipilih!')
   }
 
   const token = localStorage.getItem('admin_token')
@@ -62,6 +63,7 @@ const saveUser = async () => {
   
   const payload = {
     username: formUser.value.username,
+    email: formUser.value.email,
     role_id: Number(formUser.value.role_id),
   }
   if (formUser.value.password) {
@@ -137,8 +139,9 @@ onMounted(async () => {
           <thead class="bg-slate-50/80 border-b border-slate-200">
             <tr>
               <th class="py-5 px-6 font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">ID</th>
-              <th class="py-5 px-6 font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">Username</th>
+              <th class="py-5 px-6 font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">Pengguna</th>
               <th class="py-5 px-6 font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">Role</th>
+              <th class="py-5 px-6 font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">Status</th>
               <th class="py-5 px-6 text-center font-black text-slate-400 uppercase tracking-wider text-[10px] whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
@@ -150,7 +153,10 @@ onMounted(async () => {
                   <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg">
                     <User :size="16" />
                   </div>
-                  <span class="font-bold text-slate-700">{{ u.username }}</span>
+                  <div>
+                    <div class="font-bold text-slate-700">{{ u.username }}</div>
+                    <div class="text-xs text-slate-500">{{ u.email || 'Belum ada email' }}</div>
+                  </div>
                 </div>
               </td>
               <td class="py-4 px-6">
@@ -159,6 +165,14 @@ onMounted(async () => {
                 </span>
                 <span v-else class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border border-sky-200">
                   <User :size="14" /> {{ u.role ? u.role.nama_role : (u.legacy_role || 'Unknown') }}
+                </span>
+              </td>
+              <td class="py-4 px-6">
+                <span v-if="u.locked_until && new Date(u.locked_until) > new Date()" class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 py-1 rounded-lg text-xs font-black tracking-wider border border-rose-200">
+                  TERKUNCI
+                </span>
+                <span v-else class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-xs font-black tracking-wider border border-emerald-200">
+                  AKTIF
                 </span>
               </td>
               <td class="py-4 px-6 text-center">
@@ -173,7 +187,7 @@ onMounted(async () => {
               </td>
             </tr>
             <tr v-if="listUsers.length === 0">
-              <td colspan="4" class="py-10 text-center text-slate-400 font-medium">Memuat data...</td>
+              <td colspan="5" class="py-10 text-center text-slate-400 font-medium">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -193,8 +207,12 @@ onMounted(async () => {
       
       <div class="p-6 space-y-4">
         <div>
-          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Username</label>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Username <span class="text-[9px] normal-case">(Opsional)</span></label>
           <input type="text" v-model="formUser.username" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email (Google Login)</label>
+          <input type="email" v-model="formUser.email" placeholder="budi@gmail.com" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Role</label>
@@ -204,7 +222,7 @@ onMounted(async () => {
           </select>
         </div>
         <div>
-          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password <span v-if="isEdit" class="text-[9px] text-red-400 normal-case">(Kosongkan jika tidak ingin diubah)</span></label>
+          <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password <span class="text-[9px] normal-case">(Opsional)</span></label>
           <input type="password" v-model="formUser.password" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700">
         </div>
       </div>

@@ -1,7 +1,12 @@
 import { createApp } from 'vue'
 import '@fontsource/inter'
-import './style.css' // Pastikan ini file tempat import Tailwind kamu
+import './style.css'
 import App from './App.vue'
-import router from './router' // <-- Panggil router
+import router from './router'
+import vue3GoogleLogin from 'vue3-google-login'
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+app.use(router)
+app.use(vue3GoogleLogin, {
+  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID
+}).mount('#app')
