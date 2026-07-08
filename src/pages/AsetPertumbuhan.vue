@@ -1,12 +1,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Lock, TrendingUp } from 'lucide-vue-next'
+import { Lock, TrendingUp, ExternalLink } from 'lucide-vue-next'
 
 const liveData = ref({ total_kas: 0, total_piutang: 0, piutang_reguler: 0, piutang_pesanan: 0, total_persediaan: 0, total_hutang: 0, aset_bersih: 0 })
 const prive = ref(0)
 const bulanLalu = ref(null)
 const riwayat = ref([])
 const isLoading = ref(false)
+
+const showModalRincian = ref(false)
+const rincianType = ref('') // 'piutang' or 'hutang'
+const rincianData = ref([])
+const isLoadingRincian = ref(false)
 
 import { getWIBDateString } from '../utils/date'
 
@@ -52,6 +57,27 @@ const fetchAset = async () => {
     console.error("Gagal menarik data aset:", e)
   } finally {
     isLoading.value = false
+  }
+}
+
+const openRincian = async (type) => {
+  rincianType.value = type
+  showModalRincian.value = true
+  isLoadingRincian.value = true
+  try {
+    const token = localStorage.getItem('admin_token') || ''
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/aset/rincian?date=${selectedDate.value}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      rincianData.value = type === 'piutang' ? data.piutang || [] : data.hutang || []
+      rincianData.value.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+    }
+  } catch (e) {
+    console.error("Gagal menarik rincian aset:", e)
+  } finally {
+    isLoadingRincian.value = false
   }
 }
 
@@ -136,17 +162,19 @@ onMounted(fetchAset)
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kas Tunai</p>
             <p class="text-xl font-black text-slate-800 mt-1">Rp {{ formatRp(liveData.total_kas) }}</p>
           </div>
-          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Piutang Dagang</p>
-            <p class="text-xl font-black text-slate-800 mt-1">Rp {{ formatRp(liveData.total_piutang) }}</p>
+          <div @click="openRincian('piutang')" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:bg-slate-50 transition-all hover:-translate-y-1 group relative">
+            <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-blue-600 transition-colors flex items-center">Piutang Dagang <ExternalLink :size="10" class="ml-1 opacity-50 group-hover:opacity-100 transition-opacity" /></p>
+            <p class="text-xl font-black text-slate-800 mt-1 relative">Rp {{ formatRp(liveData.total_piutang) }}</p>
           </div>
           <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Persediaan Barang</p>
             <p class="text-xl font-black text-slate-800 mt-1">Rp {{ formatRp(liveData.total_persediaan) }}</p>
           </div>
-          <div class="bg-rose-50/30 p-5 rounded-2xl border border-rose-100 shadow-sm">
-            <p class="text-[10px] font-black text-rose-500 uppercase tracking-wider">Hutang Dagang (-)</p>
-            <p class="text-xl font-black text-rose-700 mt-1">Rp {{ formatRp(liveData.total_hutang) }}</p>
+          <div @click="openRincian('hutang')" class="bg-rose-50/30 p-5 rounded-2xl border border-rose-100 shadow-sm cursor-pointer hover:bg-rose-50 transition-all hover:-translate-y-1 group relative">
+            <div class="absolute inset-0 bg-rose-500/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+            <p class="text-[10px] font-black text-rose-500 uppercase tracking-wider group-hover:text-rose-600 transition-colors flex items-center">Hutang Dagang (-) <ExternalLink :size="10" class="ml-1 opacity-50 group-hover:opacity-100 transition-opacity" /></p>
+            <p class="text-xl font-black text-rose-700 mt-1 relative">Rp {{ formatRp(liveData.total_hutang) }}</p>
           </div>
           <div class="bg-slate-900 p-5 rounded-2xl shadow-lg border border-slate-800 md:col-span-2 lg:col-span-1 relative overflow-hidden">
             <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-indigo-500/30 rounded-full blur-xl"></div>
@@ -248,7 +276,71 @@ onMounted(fetchAset)
           </div>
         </div>
       </section>
+    </div>
 
+    <!-- Modal Rincian -->
+    <div v-if="showModalRincian" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 class="text-lg font-black text-slate-800">
+              Rincian {{ rincianType === 'piutang' ? 'Piutang Dagang' : 'Hutang Dagang' }}
+            </h3>
+            <p class="text-xs font-medium text-slate-500 mt-0.5">Posisi Per Tanggal: <span class="font-bold text-slate-700">{{ selectedDate }}</span></p>
+          </div>
+          <button @click="showModalRincian = false" class="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm hover:shadow transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-1">
+          <div v-if="isLoadingRincian" class="flex flex-col items-center justify-center py-10">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            <p class="text-sm font-medium text-slate-500">Memuat rincian...</p>
+          </div>
+          
+          <div v-else-if="rincianData.length === 0" class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <p class="text-slate-500 font-medium">Tidak ada rincian tagihan pada tanggal tersebut.</p>
+          </div>
+          
+          <div v-else class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">No. Nota</th>
+                  <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Jenis</th>
+                  <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Mitra</th>
+                  <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Tanggal</th>
+                  <th class="px-4 py-3 text-right text-xs font-black text-slate-500 uppercase tracking-wider">Nominal</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-slate-100">
+                <tr v-for="(item, idx) in rincianData" :key="idx" class="hover:bg-slate-50 transition-colors">
+                  <td class="px-4 py-3 whitespace-nowrap font-bold text-blue-600">{{ item.no_nota }}</td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider" 
+                          :class="item.jenis === 'REGULER' ? 'bg-indigo-100 text-indigo-700' : 
+                                 (item.jenis === 'PESANAN' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700')">
+                      {{ item.jenis }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 font-medium text-slate-700">{{ item.mitra || '-' }}</td>
+                  <td class="px-4 py-3 whitespace-nowrap text-slate-600">{{ item.tanggal }}</td>
+                  <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-slate-800">Rp {{ formatRp(item.nominal) }}</td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-slate-50 font-black border-t-2 border-slate-200">
+                <tr>
+                  <td colspan="4" class="px-4 py-3 text-right text-slate-600">Total Keseluruhan:</td>
+                  <td class="px-4 py-3 text-right text-slate-900 text-base">
+                    Rp {{ formatRp(rincianData.reduce((acc, curr) => acc + curr.nominal, 0)) }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
