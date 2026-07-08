@@ -105,11 +105,11 @@ onMounted(fetchAset)
       
       <div class="flex flex-wrap gap-3 items-center">
         <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 shadow-inner focus-within:ring-2 focus-within:ring-indigo-500 transition-shadow">
-          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-3 hidden sm:block">Posisi:</span>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-3 hidden sm:block">Posisi Aset Per:</span>
           <input type="date" v-model="selectedDate" @change="fetchAset" class="text-xs font-bold text-slate-700 outline-none bg-transparent">
         </div>
-        <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 shadow-inner focus-within:ring-2 focus-within:ring-indigo-500 transition-shadow">
-          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-3 hidden sm:block">Prive:</span>
+        <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 shadow-inner focus-within:ring-2 focus-within:ring-indigo-500 transition-shadow" title="Tanggal mulai untuk menghitung total akumulasi Prive">
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-3 hidden sm:block">Mulai Prive:</span>
           <input type="date" v-model="startPriveDate" @change="fetchAset" class="text-xs font-bold text-slate-700 outline-none bg-transparent">
         </div>
         <button @click="simpanSnapshot" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center gap-2">

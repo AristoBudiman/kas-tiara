@@ -178,7 +178,7 @@ const fetchKas = async () => {
     const data = await res.json()
     listKasAll.value = Array.isArray(data.riwayat) ? data.riwayat : []
     
-    totalKasFisik.value = data.saldo_saat_ini || 0
+    totalKasFisik.value = data.saldo_akhir_periode !== undefined ? data.saldo_akhir_periode : (data.saldo_saat_ini || 0)
   } catch (err) { 
     console.error(err) 
   }

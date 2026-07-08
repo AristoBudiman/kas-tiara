@@ -22,6 +22,10 @@ const isFetching = ref(false)
 
 const viewMode = ref('aktif') 
 
+const showLunasModal = ref(false)
+const notaToLunas = ref(null)
+const tanggalLunas = ref(defaultEnd)
+
 // ==========================================
 // MENGAMBIL DATA RIWAYAT BELANJA
 // ==========================================
@@ -71,25 +75,42 @@ const pulihkanPembelian = async (id) => {
 }
 
 const toggleStatusBayar = async (b) => {
-  const isCurrentlyLunas = b.is_lunas;
-  const actionText = isCurrentlyLunas 
-    ? 'Membatalkan lunas (mengubah jadi HUTANG)? Uang akan ditarik kembali ke Kas.' 
-    : 'Melunasi hutang ini? Kas akan otomatis terpotong.';
-    
-  if(await window.$dialog.confirm(`Yakin ingin ${actionText}`)) {
-    const token = localStorage.getItem('admin_token')
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/pembelian/${b.ID}/status`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify({ is_lunas: !isCurrentlyLunas }) 
-    })
-    
-    if(res.ok) {
-      fetchBelanja()
+  if (b.is_lunas) {
+    if (await window.$dialog.confirm('Membatalkan lunas (mengubah jadi HUTANG)? Uang akan ditarik kembali ke Kas.')) {
+      eksekusiStatusBayar(b, false, null)
     }
+  } else {
+    notaToLunas.value = b
+    tanggalLunas.value = defaultEnd
+    showLunasModal.value = true
+  }
+}
+
+const eksekusiStatusBayar = async (b, targetLunas, tglLunas) => {
+  const token = localStorage.getItem('admin_token')
+  const payload = { is_lunas: targetLunas }
+  if (targetLunas && tglLunas) {
+    payload.tanggal_lunas = tglLunas
+  }
+  
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/pembelian/${b.ID}/status`, {
+    method: 'PUT',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify(payload)
+  })
+  
+  if(res.ok) {
+    showLunasModal.value = false
+    fetchBelanja() 
+  }
+}
+
+const konfirmasiLunas = () => {
+  if (notaToLunas.value) {
+    eksekusiStatusBayar(notaToLunas.value, true, tanggalLunas.value)
   }
 }
 
@@ -122,7 +143,7 @@ const grandTotal = computed(() => listBelanja.value.reduce((sum, item) => sum + 
 // STATE & LOGIKA KERANJANG BELANJA
 // ==========================================
 const showModalBeli = ref(false)
-const formBeli = ref({ tanggal: new Date().toISOString().split('T')[0], keterangan: '', is_lunas: true, details: [] })
+const formBeli = ref({ tanggal: new Date().toISOString().split('T')[0], tanggal_lunas: new Date().toISOString().split('T')[0], keterangan: '', is_lunas: true, details: [] })
 const tempBeli = ref({ bahan_id: '', qty: '', subtotal: '' }) 
 const tempSatuanPilihan = ref(null)
 
@@ -156,7 +177,7 @@ const opsiSatuanAktif = computed(() => {
 })
 
 const bukaModalBeli = () => { 
-  formBeli.value = { tanggal: new Date().toISOString().split('T')[0], keterangan: '', is_lunas: true, details: [] }
+  formBeli.value = { tanggal: new Date().toISOString().split('T')[0], tanggal_lunas: new Date().toISOString().split('T')[0], keterangan: '', is_lunas: true, details: [] }
   tempBeli.value = { bahan_id: '', qty: '', subtotal: '' }
   searchBahan.value = ''
   showModalBeli.value = true 
@@ -207,6 +228,7 @@ const simpanPembelian = async () => {
   
   const payload = {
     tanggal: formBeli.value.tanggal,
+    tanggal_lunas: formBeli.value.tanggal_lunas,
     keterangan: formBeli.value.keterangan,
     is_lunas: formBeli.value.is_lunas,
     details: formBeli.value.details
@@ -452,7 +474,7 @@ onMounted(() => {
       <div class="p-6 overflow-y-auto custom-scrollbar bg-gray-50/30 flex-1 space-y-6">
         
         <!-- Nota Info -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Nota</label>
             <input type="date" v-model="formBeli.tanggal" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 font-semibold text-gray-700 shadow-sm transition-all outline-none">
@@ -463,18 +485,22 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Status Pembayaran</label>
-            <div class="flex gap-3 h-10.5">
-              <label class="flex-1 flex items-center justify-center gap-2 cursor-pointer bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors has-checked:border-sky-500 has-checked:bg-sky-50 has-checked:ring-1 has-checked:ring-sky-500">
+            <div class="flex gap-2 h-10.5">
+              <label class="flex-1 flex items-center justify-center gap-1.5 cursor-pointer bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors has-checked:border-sky-500 has-checked:bg-sky-50 has-checked:ring-1 has-checked:ring-sky-500">
                 <input type="radio" v-model="formBeli.is_lunas" :value="true" class="sr-only">
-                <span class="w-3 h-3 rounded-full border-2 border-gray-300" :class="{ 'border-sky-500 bg-sky-500': formBeli.is_lunas }"></span>
-                <span class="text-xs font-bold" :class="formBeli.is_lunas ? 'text-sky-700' : 'text-gray-600'">Lunas</span>
+                <span class="w-2.5 h-2.5 rounded-full border-2 border-gray-300" :class="{ 'border-sky-500 bg-sky-500': formBeli.is_lunas }"></span>
+                <span class="text-[10px] font-bold" :class="formBeli.is_lunas ? 'text-sky-700' : 'text-gray-600'">Lunas</span>
               </label>
-              <label class="flex-1 flex items-center justify-center gap-2 cursor-pointer bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors has-checked:border-red-500 has-checked:bg-red-50 has-checked:ring-1 has-checked:ring-red-500">
+              <label class="flex-1 flex items-center justify-center gap-1.5 cursor-pointer bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors has-checked:border-red-500 has-checked:bg-red-50 has-checked:ring-1 has-checked:ring-red-500">
                 <input type="radio" v-model="formBeli.is_lunas" :value="false" class="sr-only">
-                <span class="w-3 h-3 rounded-full border-2 border-gray-300" :class="{ 'border-red-500 bg-red-500': !formBeli.is_lunas }"></span>
-                <span class="text-xs font-bold" :class="!formBeli.is_lunas ? 'text-red-700' : 'text-gray-600'">Hutang</span>
+                <span class="w-2.5 h-2.5 rounded-full border-2 border-gray-300" :class="{ 'border-red-500 bg-red-500': !formBeli.is_lunas }"></span>
+                <span class="text-[10px] font-bold" :class="!formBeli.is_lunas ? 'text-red-700' : 'text-gray-600'">Hutang</span>
               </label>
             </div>
+          </div>
+          <div v-if="formBeli.is_lunas">
+            <label class="block text-[11px] font-bold text-sky-600 uppercase tracking-wider mb-1.5">Tgl Pelunasan</label>
+            <input type="date" v-model="formBeli.tanggal_lunas" required class="w-full bg-sky-50 border border-sky-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 font-semibold text-sky-700 shadow-sm transition-all outline-none">
           </div>
         </div>
 
@@ -610,6 +636,29 @@ onMounted(() => {
         <button @click="simpanPembelian" type="button" class="bg-gray-900 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-gray-800 shadow-md transition-all active:scale-95 flex items-center gap-2">
           <span>Simpan Pembelian</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PELUNASAN -->
+  <div v-if="showLunasModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+    <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all">
+      <div class="bg-slate-800 px-5 py-4 flex justify-between items-center">
+        <h3 class="font-black text-white text-lg tracking-wide">Pilih Tanggal Lunas</h3>
+        <button @click="showLunasModal = false" class="text-slate-400 hover:text-white transition-colors">
+          <X :size="20" />
+        </button>
+      </div>
+      <div class="p-5">
+        <p class="text-sm text-slate-600 mb-4">Kas akan otomatis terpotong pada tanggal yang Anda pilih.</p>
+        <div class="mb-5">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tanggal Lunas</label>
+          <input type="date" v-model="tanggalLunas" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 bg-slate-50" />
+        </div>
+        <div class="flex gap-3">
+          <button @click="showLunasModal = false" class="flex-1 py-2.5 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Batal</button>
+          <button @click="konfirmasiLunas" class="flex-1 py-2.5 font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-md shadow-sky-200 transition-colors">Tandai Lunas</button>
+        </div>
       </div>
     </div>
   </div>
