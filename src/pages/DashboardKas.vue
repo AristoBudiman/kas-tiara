@@ -53,13 +53,14 @@ const toggleKas = async () => {
 }
 
 // --- PENGATURAN TANGGAL & FILTER ---
-const getLocalDateString = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+import { getWIBDateString } from '../utils/date'
+
 const today = new Date()
 
 // Set default ke tanggal 1 bulan berjalan
 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-const startDate = ref(getLocalDateString(firstDayOfMonth))
-const endDate = ref(getLocalDateString(today))
+const startDate = ref(getWIBDateString(firstDayOfMonth))
+const endDate = ref(getWIBDateString(today))
 
 // --- STATE ---
 const totalKasFisik = ref(0) 
@@ -67,7 +68,7 @@ const listKasAll = ref([])
 const showForm = ref(false)
 
 const form = ref({
-  tanggal: getLocalDateString(today),
+  tanggal: getWIBDateString(today),
   jam: '',
   kategori: 'RUMAH_TANGGA',
   jenis: 'MASUK',

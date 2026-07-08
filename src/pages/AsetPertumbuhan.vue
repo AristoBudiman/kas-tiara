@@ -8,14 +8,15 @@ const bulanLalu = ref(null)
 const riwayat = ref([])
 const isLoading = ref(false)
 
+import { getWIBDateString } from '../utils/date'
+
 const today = new Date();
-const offset = today.getTimezoneOffset() * 60000;
-const localTodayStr = new Date(today - offset).toISOString().split('T')[0];
+const localTodayStr = getWIBDateString(today);
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-const localFirstDayStr = new Date(firstDay - offset).toISOString().split('T')[0];
+const localFirstDayStr = getWIBDateString(firstDay);
 
 const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-const localLastYearStr = new Date(lastYear - offset).toISOString().split('T')[0];
+const localLastYearStr = getWIBDateString(lastYear);
 
 const selectedDate = ref(localTodayStr)
 const startPriveDate = ref(localFirstDayStr)
