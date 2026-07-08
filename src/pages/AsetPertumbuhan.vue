@@ -13,6 +13,10 @@ const rincianType = ref('') // 'piutang' or 'hutang'
 const rincianData = ref([])
 const isLoadingRincian = ref(false)
 
+const showModalKas = ref(false)
+const rincianKas = ref({ saldo_awal: 0, mutasi: [], saldo_akhir: 0 })
+const isLoadingKas = ref(false)
+
 import { getWIBDateString } from '../utils/date'
 
 const today = new Date();
@@ -78,6 +82,29 @@ const openRincian = async (type) => {
     console.error("Gagal menarik rincian aset:", e)
   } finally {
     isLoadingRincian.value = false
+  }
+}
+
+const openRincianKas = async () => {
+  showModalKas.value = true
+  isLoadingKas.value = true
+  try {
+    const token = localStorage.getItem('admin_token') || ''
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/aset/rincian-kas?start_date=${startPriveDate.value}&end_date=${selectedDate.value}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      rincianKas.value = {
+        saldo_awal: data.saldo_awal || 0,
+        mutasi: data.mutasi || [],
+        saldo_akhir: data.saldo_akhir || 0
+      }
+    }
+  } catch (e) {
+    console.error("Gagal menarik rincian kas:", e)
+  } finally {
+    isLoadingKas.value = false
   }
 }
 
@@ -158,9 +185,10 @@ onMounted(fetchAset)
         </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kas Tunai</p>
-            <p class="text-xl font-black text-slate-800 mt-1">Rp {{ formatRp(liveData.total_kas) }}</p>
+          <div @click="openRincianKas" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:bg-slate-50 transition-all hover:-translate-y-1 group relative">
+            <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-emerald-600 transition-colors flex items-center">Kas Tunai <ExternalLink :size="10" class="ml-1 opacity-50 group-hover:opacity-100 transition-opacity" /></p>
+            <p class="text-xl font-black text-slate-800 mt-1 relative">Rp {{ formatRp(liveData.total_kas) }}</p>
           </div>
           <div @click="openRincian('piutang')" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:bg-slate-50 transition-all hover:-translate-y-1 group relative">
             <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
@@ -342,5 +370,80 @@ onMounted(fetchAset)
         </div>
       </div>
     </div>
+
+    <!-- Modal Mutasi Kas -->
+    <div v-if="showModalKas" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Buku Mutasi Kas Berjalan
+            </h3>
+            <p class="text-xs font-medium text-slate-500 mt-0.5">Rentang: <span class="font-bold text-slate-700">{{ startPriveDate }}</span> s/d <span class="font-bold text-slate-700">{{ selectedDate }}</span></p>
+          </div>
+          <button @click="showModalKas = false" class="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm hover:shadow transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-1">
+          <div v-if="isLoadingKas" class="flex flex-col items-center justify-center py-10">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mb-4"></div>
+            <p class="text-sm font-medium text-slate-500">Menarik mutasi kas...</p>
+          </div>
+          
+          <div v-else>
+            <!-- Highlight Saldo Awal -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4 flex justify-between items-center shadow-sm">
+              <span class="text-xs font-black text-indigo-700 uppercase tracking-widest">Saldo Awal (Tepat Sebelum {{ startPriveDate }})</span>
+              <span class="text-xl font-black text-indigo-900">Rp {{ formatRp(rincianKas.saldo_awal) }}</span>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+              <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Tanggal</th>
+                    <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Kategori</th>
+                    <th class="px-4 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Keterangan</th>
+                    <th class="px-4 py-3 text-right text-xs font-black text-emerald-600 uppercase tracking-wider">Masuk</th>
+                    <th class="px-4 py-3 text-right text-xs font-black text-rose-500 uppercase tracking-wider">Keluar</th>
+                    <th class="px-4 py-3 text-right text-xs font-black text-blue-600 uppercase tracking-wider">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-100">
+                  <tr v-if="!rincianKas.mutasi || rincianKas.mutasi.length === 0">
+                    <td colspan="6" class="px-4 py-10 text-center text-slate-400 font-medium">Tidak ada transaksi kas di rentang waktu ini.</td>
+                  </tr>
+                  <tr v-for="(item, idx) in rincianKas.mutasi" :key="idx" class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap text-slate-600 font-medium">{{ item.tanggal }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span class="px-2 py-1 text-[9px] font-bold rounded-md uppercase tracking-wider bg-slate-100 text-slate-600">{{ item.kategori }}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-slate-700 text-xs">{{ item.keterangan || '-' }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-emerald-600">
+                      {{ item.jenis === 'MASUK' ? '+ Rp ' + formatRp(item.nominal) : '-' }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-rose-500">
+                      {{ item.jenis === 'KELUAR' ? '- Rp ' + formatRp(item.nominal) : '-' }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-blue-700">Rp {{ formatRp(item.saldo_berjalan) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Highlight Saldo Akhir -->
+            <div class="mt-4 bg-slate-900 rounded-xl p-4 flex justify-between items-center shadow-lg relative overflow-hidden">
+              <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-500/30 rounded-full blur-xl"></div>
+              <span class="text-xs font-black text-slate-400 uppercase tracking-widest relative z-10">Saldo Akhir (Per {{ selectedDate }})</span>
+              <span class="text-2xl font-black text-white relative z-10">Rp {{ formatRp(rincianKas.saldo_akhir) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
