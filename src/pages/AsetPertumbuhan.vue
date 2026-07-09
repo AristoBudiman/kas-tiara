@@ -11,6 +11,20 @@ const isLoading = ref(false)
 const showModalRincian = ref(false)
 const rincianType = ref('') // 'piutang' or 'hutang'
 const rincianData = ref([])
+const rincianSortBy = ref('tanggal')
+const sortedRincianData = computed(() => {
+  const data = [...rincianData.value]
+  if (rincianSortBy.value === 'toko') {
+    return data.sort((a, b) => {
+      const mitraA = a.mitra || ''
+      const mitraB = b.mitra || ''
+      if (mitraA < mitraB) return -1
+      if (mitraA > mitraB) return 1
+      return new Date(b.tanggal) - new Date(a.tanggal)
+    })
+  }
+  return data.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+})
 const isLoadingRincian = ref(false)
 
 const showModalKas = ref(false)
@@ -76,7 +90,7 @@ const openRincian = async (type) => {
     if (res.ok) {
       const data = await res.json()
       rincianData.value = type === 'piutang' ? data.piutang || [] : data.hutang || []
-      rincianData.value.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+      rincianSortBy.value = 'tanggal' // Reset to default when opening
     }
   } catch (e) {
     console.error("Gagal menarik rincian aset:", e)
@@ -316,9 +330,18 @@ onMounted(fetchAset)
             </h3>
             <p class="text-xs font-medium text-slate-500 mt-0.5">Posisi Per Tanggal: <span class="font-bold text-slate-700">{{ selectedDate }}</span></p>
           </div>
-          <button @click="showModalRincian = false" class="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm hover:shadow transition-all">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-slate-100 rounded-lg px-2 py-1 border border-slate-200">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Urutkan:</span>
+              <select v-model="rincianSortBy" class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
+                <option value="tanggal">Tanggal (Terbaru)</option>
+                <option value="toko">Toko (A - Z)</option>
+              </select>
+            </div>
+            <button @click="showModalRincian = false" class="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm hover:shadow transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
         </div>
         
         <div class="p-6 overflow-y-auto flex-1">
@@ -327,7 +350,7 @@ onMounted(fetchAset)
             <p class="text-sm font-medium text-slate-500">Memuat rincian...</p>
           </div>
           
-          <div v-else-if="rincianData.length === 0" class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <div v-else-if="sortedRincianData.length === 0" class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             <p class="text-slate-500 font-medium">Tidak ada rincian tagihan pada tanggal tersebut.</p>
           </div>
           
@@ -343,7 +366,7 @@ onMounted(fetchAset)
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-slate-100">
-                <tr v-for="(item, idx) in rincianData" :key="idx" class="hover:bg-slate-50 transition-colors">
+                <tr v-for="(item, idx) in sortedRincianData" :key="idx" class="hover:bg-slate-50 transition-colors">
                   <td class="px-4 py-3 whitespace-nowrap font-bold text-blue-600">{{ item.no_nota }}</td>
                   <td class="px-4 py-3 whitespace-nowrap">
                     <span class="px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider" 
@@ -361,7 +384,7 @@ onMounted(fetchAset)
                 <tr>
                   <td colspan="4" class="px-4 py-3 text-right text-slate-600">Total Keseluruhan:</td>
                   <td class="px-4 py-3 text-right text-slate-900 text-base">
-                    Rp {{ formatRp(rincianData.reduce((acc, curr) => acc + curr.nominal, 0)) }}
+                    Rp {{ formatRp(sortedRincianData.reduce((acc, curr) => acc + curr.nominal, 0)) }}
                   </td>
                 </tr>
               </tfoot>
