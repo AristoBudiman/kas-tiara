@@ -9,7 +9,7 @@ const riwayat = ref([])
 const isLoading = ref(false)
 
 const showModalRincian = ref(false)
-const rincianType = ref('') // 'piutang' or 'hutang'
+const rincianType = ref('')
 const rincianData = ref([])
 const rincianSortBy = ref('tanggal')
 const sortedRincianData = computed(() => {
