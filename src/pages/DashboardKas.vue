@@ -138,11 +138,9 @@ const chartOptions = {
   plugins: { 
     legend: { 
       position: 'bottom', 
-      labels: { color: '#475569', usePointStyle: true, boxWidth: 8 } 
+      labels: { font: { family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8 }
     },
     tooltip: {
-      backgroundColor: 'rgba(15, 23, 42, 0.9)',
-      padding: 12,
       callbacks: {
         label: function(context) {
           const label = context.label || '';
@@ -156,6 +154,8 @@ const chartOptions = {
   },
   cutout: '70%'
 }
+
+const expandedRowId = ref(null)
 
 // --- ACTIONS ---
 const fetchKas = async () => {
@@ -386,13 +386,16 @@ onMounted(() => {
               <td class="px-6 py-4 whitespace-nowrap text-slate-500 font-mono text-xs">
                 {{ k.no_nota_ref || '-' }}
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium mr-2 border" 
+              <td class="px-6 py-4 cursor-pointer" @click="expandedRowId = expandedRowId === k.id ? null : k.id" title="Klik untuk meluaskan rincian">
+                <div class="flex items-start">
+                  <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium mr-2 border mt-0.5" 
                         :class="k.jenis === 'MASUK' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'">
                     {{ k.kategori.replace('_', ' ') }}
                   </span>
-                  <span class="text-slate-600 truncate max-w-xs print:whitespace-normal print:max-w-none">{{ k.keterangan }}</span>
+                  <span class="text-slate-600 print:whitespace-normal print:max-w-none transition-all duration-300" 
+                        :class="expandedRowId === k.id ? 'whitespace-normal wrap-break-word' : 'truncate max-w-xs'">
+                    {{ k.keterangan }}
+                  </span>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-semibold" :class="k.jenis === 'MASUK' ? 'text-emerald-600' : 'text-slate-900'">

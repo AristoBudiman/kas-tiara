@@ -387,6 +387,7 @@ onMounted(() => {
                     <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border border-emerald-200/50">
                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> LUNAS
                     </span>
+                    <span v-if="nota.tanggal_lunas" class="text-[9px] font-bold text-slate-400">Tgl: {{ formatTanggal(nota.tanggal_lunas) }}</span>
                     <button v-if="viewMode === 'aktif'" @click="toggleStatusBayar(nota)" class="text-[10px] font-bold text-slate-400 hover:text-slate-600 underline decoration-slate-300 underline-offset-2 transition-colors">Batal Lunas</button>
                   </div>
                   <div v-else class="flex flex-col items-center gap-2">

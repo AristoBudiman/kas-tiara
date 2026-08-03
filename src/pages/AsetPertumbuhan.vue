@@ -31,6 +31,15 @@ const showModalKas = ref(false)
 const rincianKas = ref({ saldo_awal: 0, mutasi: [], saldo_akhir: 0 })
 const isLoadingKas = ref(false)
 
+const kasCurrentPage = ref(1)
+const kasItemsPerPage = ref(20)
+const kasTotalPages = computed(() => Math.ceil(rincianKas.value.mutasi.length / kasItemsPerPage.value) || 1)
+const paginatedKasMutasi = computed(() => {
+  const start = (kasCurrentPage.value - 1) * kasItemsPerPage.value
+  const end = start + kasItemsPerPage.value
+  return rincianKas.value.mutasi.slice(start, end)
+})
+
 import { getWIBDateString } from '../utils/date'
 
 const today = new Date();
@@ -102,6 +111,7 @@ const openRincian = async (type) => {
 const openRincianKas = async () => {
   showModalKas.value = true
   isLoadingKas.value = true
+  kasCurrentPage.value = 1 // Reset pagination
   try {
     const token = localStorage.getItem('admin_token') || ''
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/aset/rincian-kas?start_date=${startPriveDate.value}&end_date=${selectedDate.value}`, {
@@ -439,7 +449,7 @@ onMounted(fetchAset)
                   <tr v-if="!rincianKas.mutasi || rincianKas.mutasi.length === 0">
                     <td colspan="6" class="px-4 py-10 text-center text-slate-400 font-medium">Tidak ada transaksi kas di rentang waktu ini.</td>
                   </tr>
-                  <tr v-for="(item, idx) in rincianKas.mutasi" :key="idx" class="hover:bg-slate-50 transition-colors">
+                  <tr v-for="(item, idx) in paginatedKasMutasi" :key="idx" class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-3 whitespace-nowrap text-slate-600 font-medium">{{ item.tanggal }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">
                       <span class="px-2 py-1 text-[9px] font-bold rounded-md uppercase tracking-wider bg-slate-100 text-slate-600">{{ item.kategori }}</span>
@@ -455,6 +465,29 @@ onMounted(fetchAset)
                   </tr>
                 </tbody>
               </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div v-if="kasTotalPages > 1" class="mt-4 flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+              <button 
+                @click="kasCurrentPage--" 
+                :disabled="kasCurrentPage === 1"
+                class="px-4 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                :class="kasCurrentPage === 1 ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'"
+              >
+                &larr; Sebelumnya
+              </button>
+              <span class="text-xs font-bold text-slate-500">
+                Halaman <span class="text-slate-800">{{ kasCurrentPage }}</span> dari <span class="text-slate-800">{{ kasTotalPages }}</span>
+              </span>
+              <button 
+                @click="kasCurrentPage++" 
+                :disabled="kasCurrentPage === kasTotalPages"
+                class="px-4 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                :class="kasCurrentPage === kasTotalPages ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'"
+              >
+                Selanjutnya &rarr;
+              </button>
             </div>
 
             <!-- Highlight Saldo Akhir -->
